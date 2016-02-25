@@ -1,0 +1,136 @@
+#include <Servo.h>
+const int ledPin = 13;
+
+Servo *selectedMotor;
+Servo thrusterOne;
+Servo thrusterTwo;
+Servo thrusterThree;
+Servo thrusterFour;
+
+void stop(){
+	(*selectedMotor).writeMicroseconds(1500);
+}
+
+/*
+	'percent' is a value less than 1.0 and greater than 0.0
+*/
+void driveForward(float percent){
+	if(percent > 1.0){
+		percent = 1.0;
+	}
+	else if(percent < 0.0){
+		percent = 0.0;
+	}
+	(*selectedMotor).writeMicroseconds(1500 + (500*percent));
+}
+
+void driveReverse(float percent){
+	if(percent > 1.0){
+		percent = 1.0;
+	}
+	else if(percent < 0.0){
+		percent = 0.0;
+	}
+	
+	stop();
+	delay(150);
+	(*selectedMotor).writeMicroseconds(1300);
+	delay(150);
+	stop();
+	delay(150);
+	(*selectedMotor).writeMicroseconds(1500 - (500 * percent));
+}
+
+bool selectMotor(int n){
+	switch(n){
+		case 1:
+		//Serial.println("selected motor 1");
+		selectedMotor = &thrusterOne;
+		break;
+		
+		case 2:
+		//Serial.println("selected motor 2");
+		selectedMotor = &thrusterTwo;
+		break;
+		
+		case 3:
+		//Serial.println("selected motor 3");
+		selectedMotor = &thrusterThree;
+		break;
+		
+		case 4:
+		//Serial.println("selected motor 4");
+		selectedMotor = &thrusterFour;
+		break;
+		
+		default:
+		return false;
+	}
+	
+	return true;
+}
+
+void driveMotor(int n, float power)
+{
+	switch(n){
+		case 0:
+		stop();
+		break;
+		
+		case 1:
+		driveForward(power);
+		break;
+		
+		case 2:
+		driveReverse(power);
+		break;
+	}
+}
+
+void setup()
+{
+	pinMode(ledPin, OUTPUT);
+		
+	thrusterOne.attach(3);
+	thrusterOne.writeMicroseconds(1500);
+	
+	thrusterTwo.attach(9);
+	thrusterTwo.writeMicroseconds(1500);
+	
+	thrusterThree.attach(10);
+	thrusterThree.writeMicroseconds(1500);
+	
+	thrusterFour.attach(13);
+	thrusterFour.writeMicroseconds(1500);
+	//delay(3000);
+	
+	Serial.begin(9600);
+}
+
+void loop()
+{	
+	Serial.flush();
+	int cmdQ[4];
+	int byte = 0;
+	
+	if(Serial.available()){
+		
+		for(int n = 0; n < 4; n++){
+			if(Serial.available()) cmdQ[n] = Serial.read() - '0';
+			Serial.println(cmdQ[n]);
+			delay(10);
+		}
+		
+		selectMotor(cmdQ[0]);
+		
+		float power = ((cmdQ[2] * 10) + cmdQ[3]) / 100.0;
+		
+		driveMotor(cmdQ[1], power);
+		
+	}
+	
+	delay(250);
+	//stop();
+}
+
+
